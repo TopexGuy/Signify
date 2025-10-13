@@ -1,7 +1,7 @@
 #!/bin/bash
 # SPDX-License-Identifier: Apache-2.0
 #
-# Script Name : signify.sh
+# Script Name : Signify.sh
 # Author      : TopexGuy
 # Description : ROM signing key generator & manager
 # Key Folder  : Default = vendor/signify/keys (configurable via KEYS_DIR)
@@ -105,6 +105,13 @@ user_input() {
 }
 
 generate_certificates() {
+    # ===== DEV ENV CHECK =====
+    if [ ! -x ./development/tools/make_key ]; then
+        echo "Error: make_key tool not found or not executable at ./development/tools/make_key"
+        exit 1
+    fi
+    # ========================
+
     green "\n→ Generating certificates inside $KEYS_DIR..."
     local generated=false
 
