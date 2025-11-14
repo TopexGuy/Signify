@@ -4,7 +4,7 @@
 # Script Name : Signify.sh
 # Author      : TopexGuy
 # Description : ROM signing key generator & manager
-# Key Folder  : Default = vendor/signify/keys (configurable via KEYS_DIR)
+# Key Folder  : vendor/voltage-priv/keys
 
 # ====== CONFIGURATION ======
 KEYS_DIR="vendor/voltage-priv/keys"
@@ -73,7 +73,7 @@ user_input() {
     yellow "── Key Configuration ──"
 
     if [[ $(confirm "Do you want to customize key size and subject info?") == "yes" ]]; then
-        key_size=$(prompt_key_size "Enter the key size (2048 or 4096, APEX uses 4096): ")
+        key_size=$(prompt_key_size "Enter the key size (2048 or 4096, NOTE: make_key auto-sizes APEX keys): ")
         country_code=$(prompt "Country code (e.g. US): ")
         state=$(prompt "State/Province: ")
         city=$(prompt "City/Locality: ")
@@ -84,7 +84,7 @@ user_input() {
 
         echo ""
         yellow "Subject Preview:"
-        echo "  Key Size: $key_size"
+        echo "  Key Size (apps): $key_size"
         echo "  C=$country_code, ST=$state, L=$city"
         echo "  O=$org, OU=$ou, CN=$cn, email=$email"
 
@@ -105,37 +105,41 @@ user_input() {
 }
 
 generate_certificates() {
-    # ===== DEV ENV CHECK =====
+
     if [ ! -x ./development/tools/make_key ]; then
         echo "Error: make_key tool not found or not executable at ./development/tools/make_key"
         exit 1
     fi
-    # ========================
 
     green "\n→ Generating certificates inside $KEYS_DIR..."
     local generated=false
 
     for certificate in "${certificates[@]}" "${apex_certificates[@]}"; do
+
+        # File paths
         cert_path="$KEYS_DIR/$certificate"
         override_path="$KEYS_DIR/${certificate}.certificate.override"
 
+        # Skip if already exists
         if [[ -f "$cert_path.x509.pem" || -f "$override_path.x509.pem" ]]; then
             echo "• $certificate already exists → skipped"
             continue
         fi
 
         generated=true
-        size=$([[ " ${certificates[*]} " == *" $certificate "* ]] && echo "$key_size" || echo "4096")
-        cert_name=$([[ " ${certificates[*]} " == *" $certificate "* ]] && echo "$certificate" || echo "${certificate}.certificate.override")
+
+        # Safe filenames for APEX (replace dots)
+        if [[ " ${certificates[*]} " == *" $certificate "* ]]; then
+            cert_name="$certificate"
+        else
+            safe="${certificate//./_}"
+            cert_name="${safe}.certificate.override"
+        fi
 
         echo "• Generating $cert_name ..."
-        bash ./development/tools/make_key "$KEYS_DIR/$cert_name" "$subject" "$size" >/dev/null 2>&1
+        bash ./development/tools/make_key "$KEYS_DIR/$cert_name" "$subject"
+        # NO extra arguments → make_key now accepts and works
     done
-
-    if ! $generated; then
-        yellow "No new keys generated."
-        return
-    fi
 
     create_symlinks
     create_or_generate_releasekey
@@ -149,22 +153,24 @@ create_symlinks() {
 }
 
 create_or_generate_releasekey() {
+
     if [[ -f "$KEYS_DIR/releasekey.pk8" && -f "$KEYS_DIR/releasekey.x509.pem" ]]; then
         yellow "→ releasekey already exists — skipping"
         return
     fi
 
     green "→ Generating releasekey..."
-    bash ./development/tools/make_key "$KEYS_DIR/releasekey" "$subject" "$key_size" >/dev/null 2>&1
+    bash ./development/tools/make_key "$KEYS_DIR/releasekey" "$subject"
 }
 
 generate_android_bp() {
     green "→ Writing Android.bp..."
     {
         for apex in "${apex_certificates[@]}"; do
+            safe="${apex//./_}"
             echo "android_app_certificate {"
-            echo "    name: \"$apex.certificate.override\","
-            echo "    certificate: \"$apex.certificate.override\","
+            echo "    name: \"$safe.certificate.override\","
+            echo "    certificate: \"$safe.certificate.override\","
             echo "}"
             echo ""
         done
@@ -176,7 +182,8 @@ generate_keys_mk() {
     {
         echo "PRODUCT_CERTIFICATE_OVERRIDES := \\"
         for apex in "${apex_certificates[@]}"; do
-            echo "    $apex:$apex.certificate.override \\"
+            safe="${apex//./_}"
+            echo "    $apex:$safe.certificate.override \\"
         done
         echo ""
         echo "PRODUCT_DEFAULT_DEV_CERTIFICATE := $KEYS_DIR/testkey"
