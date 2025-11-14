@@ -7,7 +7,7 @@
 # Key Folder  : Default = vendor/signify/keys (configurable via KEYS_DIR)
 
 # ====== CONFIGURATION ======
-KEYS_DIR="vendor/signify/keys"
+KEYS_DIR="vendor/voltage-priv/keys"
 mkdir -p "$KEYS_DIR"
 # ===========================
 
