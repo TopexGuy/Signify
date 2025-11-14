@@ -138,15 +138,24 @@ generate_certificates() {
     fi
 
     create_symlinks
+    create_or_generate_releasekey
     generate_android_bp
     generate_keys_mk
 }
 
 create_symlinks() {
     green "\n→ Creating local symlinks inside $KEYS_DIR..."
-    rm -f "$KEYS_DIR/BUILD.bazel" "$KEYS_DIR/releasekey.pk8" "$KEYS_DIR/releasekey.x509.pem"
-    ln -sf "$KEYS_DIR/testkey.pk8" "$KEYS_DIR/releasekey.pk8"
-    ln -sf "$KEYS_DIR/testkey.x509.pem" "$KEYS_DIR/releasekey.x509.pem"
+    rm -f "$KEYS_DIR/BUILD.bazel"
+}
+
+create_or_generate_releasekey() {
+    if [[ -f "$KEYS_DIR/releasekey.pk8" && -f "$KEYS_DIR/releasekey.x509.pem" ]]; then
+        yellow "→ releasekey already exists — skipping"
+        return
+    fi
+
+    green "→ Generating releasekey..."
+    bash ./development/tools/make_key "$KEYS_DIR/releasekey" "$subject" "$key_size" >/dev/null 2>&1
 }
 
 generate_android_bp() {
