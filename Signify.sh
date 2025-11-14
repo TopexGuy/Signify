@@ -129,7 +129,7 @@ generate_certificates() {
         cert_name=$([[ " ${certificates[*]} " == *" $certificate "* ]] && echo "$certificate" || echo "${certificate}.certificate.override")
 
         echo "• Generating $cert_name ..."
-        bash ./development/tools/make_key "$KEYS_DIR/$cert_name" "$subject" >/dev/null 2>&1
+        bash ./development/tools/make_key "$KEYS_DIR/$cert_name" "$subject" "$size" >/dev/null 2>&1
     done
 
     if ! $generated; then
