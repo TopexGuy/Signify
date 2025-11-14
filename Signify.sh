@@ -15,6 +15,7 @@ mkdir -p "$KEYS_DIR"
 certificates=(
     bluetooth cts_uicc_2021 cyngn-app media networkstack
     nfc platform sdk_sandbox shared testcert testkey verity
+    gmscompat_lib
 )
 
 apex_certificates=(
@@ -115,7 +116,7 @@ generate_certificates() {
 
     for certificate in "${certificates[@]}" "${apex_certificates[@]}"; do
 
-        # APEX filenames need dot-safe formatting
+        # For app certs use plain name; for apex entries produce a safe filename
         if [[ " ${certificates[*]} " == *" $certificate "* ]]; then
             cert_name="$certificate"
         else
@@ -124,7 +125,7 @@ generate_certificates() {
         fi
 
         # Skip if exists
-        if [[ -f "$KEYS_DIR/$cert_name.pk8" ]]; then
+        if [[ -f "$KEYS_DIR/$cert_name.pk8" || -f "$KEYS_DIR/$cert_name.x509.pem" ]]; then
             echo "• $cert_name already exists → skipped"
             continue
         fi
@@ -139,7 +140,7 @@ generate_certificates() {
 }
 
 create_releasekey() {
-    if [[ -f "$KEYS_DIR/releasekey.pk8" ]]; then
+    if [[ -f "$KEYS_DIR/releasekey.pk8" && -f "$KEYS_DIR/releasekey.x509.pem" ]]; then
         yellow "→ releasekey already exists — skipping"
         return
     fi
@@ -171,7 +172,7 @@ generate_keys_mk() {
             echo "    $apex:$safe.certificate.override \\"
         done
         echo ""
-        echo "PRODUCT_DEFAULT_DEV_CERTIFICATE := $KEYS_DIR/testkey"
+        echo "PRODUCT_DEFAULT_DEV_CERTIFICATE := $KEYS_DIR/releasekey"
         echo "PRODUCT_EXTRA_RECOVERY_KEYS :="
     } > "$KEYS_DIR/keys.mk"
 }
