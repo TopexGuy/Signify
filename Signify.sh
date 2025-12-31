@@ -13,29 +13,77 @@ mkdir -p "$KEYS_DIR"
 
 # ====== KEY LISTS ======
 certificates=(
-    bluetooth cts_uicc_2021 cyngn-app media networkstack
-    nfc platform sdk_sandbox shared testcert testkey verity
+    bluetooth
+    cts_uicc_2021
+    cyngn-app
+    media
+    networkstack
+    nfc
+    platform
+    sdk_sandbox
+    shared
+    testcert
+    testkey
+    verity
     gmscompat_lib
+    otakey
 )
 
 apex_certificates=(
-    com.android.adbd com.android.adservices.api com.android.adservices
-    com.android.appsearch com.android.art com.android.bluetooth com.android.btservices
-    com.android.cellbroadcast com.android.compos com.android.configinfrastructure
-    com.android.connectivity.resources com.android.conscrypt com.android.devicelock
-    com.android.extservices com.android.graphics.pdf
-    com.android.hardware.biometrics.face.virtual com.android.hardware.biometrics.fingerprint.virtual
-    com.android.hardware.boot com.android.hardware.cas com.android.hardware.wifi
-    com.android.healthfitness com.android.hotspot2.osulogin com.android.i18n
-    com.android.ipsec com.android.media com.android.mediaprovider com.android.media.swcodec
-    com.android.nearby.halfsheet com.android.networkstack.tethering com.android.neuralnetworks
-    com.android.ondevicepersonalization com.android.os.statsd com.android.permission
-    com.android.resolv com.android.rkpd com.android.runtime com.android.safetycenter.resources
-    com.android.scheduling com.android.sdkext com.android.support.apexer
-    com.android.telephony com.android.telephonymodules com.android.tethering
-    com.android.tzdata com.android.uwb com.android.uwb.resources com.android.virt
-    com.android.vndk.current com.android.wifi com.android.wifi.dialog
-    com.android.wifi.resources com.google.pixel.camera.hal com.google.pixel.vibrator.hal com.qorvo.uwb
+    com.android.adbd
+    com.android.adservices.api
+    com.android.adservices
+    com.android.appsearch
+    com.android.art
+    com.android.bluetooth
+    com.android.btservices
+    com.android.cellbroadcast
+    com.android.compos
+    com.android.configinfrastructure
+    com.android.connectivity.resources
+    com.android.conscrypt
+    com.android.devicelock
+    com.android.extservices
+    com.android.graphics.pdf
+    com.android.hardware.biometrics.face.virtual
+    com.android.hardware.biometrics.fingerprint.virtual
+    com.android.hardware.boot
+    com.android.hardware.cas
+    com.android.hardware.wifi
+    com.android.healthfitness
+    com.android.hotspot2.osulogin
+    com.android.i18n
+    com.android.ipsec
+    com.android.media
+    com.android.mediaprovider
+    com.android.media.swcodec
+    com.android.nearby.halfsheet
+    com.android.networkstack.tethering
+    com.android.neuralnetworks
+    com.android.ondevicepersonalization
+    com.android.os.statsd
+    com.android.permission
+    com.android.resolv
+    com.android.rkpd
+    com.android.runtime
+    com.android.safetycenter.resources
+    com.android.scheduling
+    com.android.sdkext
+    com.android.support.apexer
+    com.android.telephony
+    com.android.telephonymodules
+    com.android.tethering
+    com.android.tzdata
+    com.android.uwb
+    com.android.uwb.resources
+    com.android.virt
+    com.android.vndk.current
+    com.android.wifi
+    com.android.wifi.dialog
+    com.android.wifi.resources
+    com.google.pixel.camera.hal
+    com.google.pixel.vibrator.hal
+    com.qorvo.uwb
 )
 # =======================
 
@@ -116,7 +164,6 @@ generate_certificates() {
 
     for certificate in "${certificates[@]}" "${apex_certificates[@]}"; do
 
-        # For app certs use plain name; for apex entries produce a safe filename
         if [[ " ${certificates[*]} " == *" $certificate "* ]]; then
             cert_name="$certificate"
         else
@@ -124,7 +171,6 @@ generate_certificates() {
             cert_name="${safe}.certificate.override"
         fi
 
-        # Skip if exists
         if [[ -f "$KEYS_DIR/$cert_name.pk8" || -f "$KEYS_DIR/$cert_name.x509.pem" ]]; then
             echo "• $cert_name already exists → skipped"
             continue
@@ -173,6 +219,7 @@ generate_keys_mk() {
         done
         echo ""
         echo "PRODUCT_DEFAULT_DEV_CERTIFICATE := $KEYS_DIR/releasekey"
+        echo "PRODUCT_OTA_PUBLIC_KEYS := $KEYS_DIR/otakey.x509.pem"
         echo "PRODUCT_EXTRA_RECOVERY_KEYS :="
     } > "$KEYS_DIR/keys.mk"
 }
